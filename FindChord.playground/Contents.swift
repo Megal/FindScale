@@ -27,6 +27,7 @@ enum Note: RawRepresentable, CustomStringConvertible {
 	typealias RawValue = Int
 
 	public var rawValue: Note.RawValue {
+
 		switch self {
 			case .C: return 0
 			case .Csharp: return 1
@@ -49,6 +50,7 @@ enum Note: RawRepresentable, CustomStringConvertible {
 	}
 
 	init?(rawValue: Note.RawValue) {
+
 		guard rawValue >= 0 else { return nil }
 
 		switch rawValue % 12 {
@@ -72,6 +74,7 @@ enum Note: RawRepresentable, CustomStringConvertible {
 	// MARK: CustomStringConvertible protocol
 
     public var description: String {
+
 		switch self {
 			case .C: return "C"
 
@@ -106,27 +109,13 @@ enum Note: RawRepresentable, CustomStringConvertible {
 }
 
 func +(lhs: Note, rhs: Int) -> Note {
+
 	guard rhs % 12 != 0 else { return lhs}
 
 	let newNoteValue = (lhs.rawValue + rhs % 12 + 12) % 12
 
 	return Note(rawValue: newNoteValue)!
 }
-
-let sortedChordNames = [
-	"",
-	"m",
-	"dim",
-	"aug",
-	"m7",
-	"7",
-	"M7",
-	"m7♭5",
-	"dim7",
-	"mM7",
-	"9",
-	"M9",
-]
 
 let chords = [
 	""	: [4, 7],
@@ -143,39 +132,65 @@ let chords = [
 	"M9" : [4, 11, 14],
 ]
 
-let printChord = { (root: Note, chordName: String) in
+let sortedChordNames = [
+	"",
+	"m",
+	"dim",
+	"aug",
+	"m7",
+	"7",
+	"M7",
+	"m7♭5",
+	"dim7",
+	"mM7",
+	"9",
+	"M9",
+]
+
+typealias ChordAsPair = (root: String, intervals: Array<Int>)
+
+func chordNamesComparer(_ p1: ChordAsPair, _ p2: ChordAsPair) -> Bool {
+
+	return sortedChordNames.index(of: p1.root)! < sortedChordNames.index(of: p2.root)!
+}
+
+
+func printChord(_ root: Note, _ chordName: String) {
+
 	print("\(root)\(chordName)")
+}
+
+/// Find and print chords
+func findChords(in scale: [Note]) {
+
+	for root in scale {
+
+		for (chordName, chord) in chords.sorted(by: chordNamesComparer) {
+
+			let c = chord
+				.map { interval in
+					// Apply intervals
+					root + interval
+				}
+				.filter { noteInChord in
+					// Filter notes not in scale
+					scale.contains(noteInChord)
+				}
+
+			// If all notes in chord `c` is
+			if c.count == chord.count {
+
+				printChord(root, chordName);
+			}
+		}
+
+		print("==================")
+	}
 }
 
 let scaleX = [0, 2, 4, 6, 7, 9, 10]
 let scaleMaj = [0, 2, 4, 5, 7, 9, 11]
-let B = Note.B // sci number of "B" note
-let scaleB = scaleX
-	.map {
-		$0 + B.rawValue
-	}
-	.map {
-		Note(rawValue: $0)!
-	}
+let scaleB = scaleX.map { Note.B + $0 }
 
-
-let chordNamesComparer = {
-	(p1: (key: String, value: Array<Int>), p2: (key: String, value: Array<Int>)) -> Bool in
-	sortedChordNames.index(of: p1.key)! < sortedChordNames.index(of: p2.key)!
-}
-
-for root in scaleB {
-	for (chordName, chord) in chords.sorted(by: chordNamesComparer) {
-		let c = chord.map { interval in
-			root + interval
-		}.filter { noteInChord in
-			scaleB.contains(noteInChord)
-		}
-
-		if c.count == chord.count {
-			printChord(root, chordName);
-		}
-	}
-	print("==================")
-}
+findChords(in: scaleB)
 
